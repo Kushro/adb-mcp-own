@@ -26,7 +26,7 @@ import (
 	"github.com/iksnerd/adb-mcp/internal/concurrent"
 )
 
-const repo = "iksnerd/adb-mcp"
+const repo = "Kushro/adb-mcp-own"
 
 // maxArchiveBytes bounds release downloads (and the extracted binary) so a
 // compromised or corrupted release can't OOM the updater. Real archives are

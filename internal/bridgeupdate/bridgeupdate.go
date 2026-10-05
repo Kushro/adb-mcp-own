@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	repo         = "iksnerd/adb-mcp"
+	repo         = "Kushro/adb-mcp-own"
 	apkAssetName = "adb-mcp-bridge.apk"
 	maxAPKBytes  = 20 << 20
 )
