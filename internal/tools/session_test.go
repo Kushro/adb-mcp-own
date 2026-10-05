@@ -13,6 +13,7 @@ import (
 // one process, same as the real server within one stdio connection).
 func resetSessionDefaults(t *testing.T) {
 	t.Helper()
+	resetPolicyForTest()
 	clear := func() {
 		sessionDefaults.mu.Lock()
 		sessionDefaults.projectDir = ""

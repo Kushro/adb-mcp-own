@@ -57,7 +57,7 @@ func (c *Client) EnableBridgeService(ctx context.Context) error {
 		if cur != "" {
 			next = cur + ":" + BridgeServiceComponent
 		}
-		if _, err := c.adb(ctx, "shell", "settings", "put", "secure", "enabled_accessibility_services", next); err != nil {
+		if _, err := c.adb(ctx, "shell", "settings", "put", "secure", "enabled_accessibility_services", shellQuote(next)); err != nil {
 			return fmt.Errorf("enabling %s: %w", BridgeServiceComponent, err)
 		}
 	}
@@ -120,6 +120,11 @@ type BridgeClickResult struct {
 // tap_on_text); if both are set the bridge matches by resource_id first.
 func (c *Client) AccessibilityClick(ctx context.Context, resourceID, text string, partial bool) (BridgeClickResult, error) {
 	var result BridgeClickResult
+	return result, fmt.Errorf("accessibility bridge is disabled until authenticated IPC, fork-specific identity, private signing, request/response correlation, and teardown cleanup are implemented")
+}
+
+func (c *Client) accessibilityClickUnsafe(ctx context.Context, resourceID, text string, partial bool) (BridgeClickResult, error) {
+	var result BridgeClickResult
 
 	if _, err := c.adb(ctx, "shell", "logcat", "-c"); err != nil {
 		return result, fmt.Errorf("clearing logcat before accessibility click: %w", err)
@@ -127,12 +132,12 @@ func (c *Client) AccessibilityClick(ctx context.Context, resourceID, text string
 
 	args := []string{"shell", "am", "broadcast", "-a", BridgeClickAction}
 	if resourceID != "" {
-		args = append(args, "-e", "resource_id", resourceID)
+		args = append(args, "-e", "resource_id", shellQuote(resourceID))
 	}
 	if text != "" {
-		args = append(args, "-e", "text", text)
+		args = append(args, "-e", "text", shellQuote(text))
 	}
-	args = append(args, "-e", "partial", strconv.FormatBool(partial))
+	args = append(args, "-e", "partial", shellQuote(strconv.FormatBool(partial)))
 	if _, err := c.adb(ctx, args...); err != nil {
 		return result, fmt.Errorf("broadcasting accessibility click: %w", err)
 	}

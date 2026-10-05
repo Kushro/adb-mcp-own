@@ -65,6 +65,9 @@ var registeredSchemeRe = regexp.MustCompile(`(?mi)^\s*(?:scheme|schemes?)\s*[:=]
 // should treat an empty result as "not discovered", not as proof that none
 // are registered.
 func (c *Client) RegisteredURLSchemes(ctx context.Context, pkg string) ([]string, error) {
+	if err := validatePackageName(pkg); err != nil {
+		return nil, err
+	}
 	out, err := c.adb(ctx, "shell", "dumpsys", "package", pkg)
 	if err != nil {
 		return nil, err
@@ -86,6 +89,9 @@ func (c *Client) RegisteredURLSchemes(ctx context.Context, pkg string) ([]string
 // has no LAUNCHER activity; that raw arg-dump is unreadable, so surface a clear
 // error instead. component may be "" if monkey didn't echo it.
 func (c *Client) LaunchApp(ctx context.Context, pkg string) (component string, err error) {
+	if err := validatePackageName(pkg); err != nil {
+		return "", err
+	}
 	out, runErr := c.adb(ctx, "shell", "monkey", "-p", pkg, "-v",
 		"-c", "android.intent.category.LAUNCHER", "1")
 	if strings.Contains(out, "No activities found to run") || strings.Contains(out, "monkey aborted") {
@@ -102,6 +108,9 @@ func (c *Client) LaunchApp(ctx context.Context, pkg string) (component string, e
 
 // StopApp force-stops an app.
 func (c *Client) StopApp(ctx context.Context, pkg string) error {
+	if err := validatePackageName(pkg); err != nil {
+		return err
+	}
 	_, err := c.adb(ctx, "shell", "am", "force-stop", pkg)
 	return err
 }
@@ -113,6 +122,9 @@ func (c *Client) StopApp(ctx context.Context, pkg string) error {
 // broadcast may be silently ignored with no error. When it doesn't visibly
 // reload the app, fall back to OpenDevMenu + tapping "Reload".
 func (c *Client) ReloadApp(ctx context.Context, pkg string) error {
+	if err := validatePackageName(pkg); err != nil {
+		return err
+	}
 	_, err := c.adb(ctx, "shell", "am", "broadcast", "-a", pkg+".RELOAD_APP_ACTION")
 	return err
 }
@@ -127,6 +139,9 @@ func (c *Client) OpenDevMenu(ctx context.Context) error {
 
 // ClearAppData wipes an app's data/cache, returning it to a first-launch state.
 func (c *Client) ClearAppData(ctx context.Context, pkg string) (string, error) {
+	if err := validatePackageName(pkg); err != nil {
+		return "", err
+	}
 	return c.adb(ctx, "shell", "pm", "clear", pkg)
 }
 
@@ -155,8 +170,14 @@ func ExpoDevClientURL(scheme, host string, port int) (string, error) {
 // OpenURL opens a URL or deep link via an ACTION_VIEW intent. When pkg is set
 // the intent is targeted at that package.
 func (c *Client) OpenURL(ctx context.Context, url, pkg string) (string, error) {
-	args := []string{"shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", url}
+	if err := validateURL(url); err != nil {
+		return "", err
+	}
+	args := []string{"shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", shellQuote(url)}
 	if strings.TrimSpace(pkg) != "" {
+		if err := validatePackageName(pkg); err != nil {
+			return "", err
+		}
 		// Restrict the intent to a package with the -p option. A bare positional
 		// argument would be parsed by `am` as the intent DATA URI, clobbering the
 		// -d url above and silently opening the wrong thing.
@@ -274,6 +295,9 @@ func (c *Client) GetAppState(ctx context.Context, pkg string) (AppState, error) 
 // Metro/HMR marker in logcat. This catches git checkout/stash replacements that
 // Metro's watcher missed while the process still has a live Metro socket.
 func (c *Client) GetAppStateWithSource(ctx context.Context, pkg, sourcePath string) (AppState, error) {
+	if err := validatePackageName(pkg); err != nil {
+		return AppState{}, err
+	}
 	s := AppState{Package: pkg, BundleSource: "unknown"}
 	var sourceTime time.Time
 	if sourcePath != "" {
@@ -562,6 +586,9 @@ func firstLineContaining(logs, needle string) string {
 // GetAppDetails reports an app's version and launchable activity via
 // `dumpsys package` + `cmd package resolve-activity`.
 func (c *Client) GetAppDetails(ctx context.Context, pkg string) (AppDetails, error) {
+	if err := validatePackageName(pkg); err != nil {
+		return AppDetails{}, err
+	}
 	d := AppDetails{Package: pkg}
 	dump, err := c.adb(ctx, "shell", "dumpsys", "package", pkg)
 	if err != nil {

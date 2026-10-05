@@ -23,16 +23,16 @@ func (c *Client) SetDeviceLock(ctx context.Context, lockType, value, old string)
 	}
 	args := []string{"shell", "locksettings", sub}
 	if strings.TrimSpace(old) != "" {
-		args = append(args, "--old", old)
+		args = append(args, "--old", shellQuote(old))
 	}
-	args = append(args, value)
+	args = append(args, shellQuote(value))
 	_, err := c.adb(ctx, args...)
 	return err
 }
 
 // ClearDeviceLock removes the lock screen, supplying the current credential.
 func (c *Client) ClearDeviceLock(ctx context.Context, old string) error {
-	_, err := c.adb(ctx, "shell", "locksettings", "clear", "--old", old)
+	_, err := c.adb(ctx, "shell", "locksettings", "clear", "--old", shellQuote(old))
 	return err
 }
 

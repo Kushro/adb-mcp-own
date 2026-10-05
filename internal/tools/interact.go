@@ -28,7 +28,7 @@ type tapTextArgs struct {
 	Text             string `json:"text" jsonschema:"Text or content-description to find."`
 	Partial          *bool  `json:"partial,omitempty" jsonschema:"Substring match instead of exact. Default true."`
 	VerifyChange     *bool  `json:"verify_change,omitempty" jsonschema:"Also report whether the UI hierarchy changed after the tap (ui_changed: true/false). Costs two extra hierarchy reads (~2-3s); use when a tap silently doing nothing would send you down the wrong path."`
-	ViaAccessibility *bool  `json:"via_accessibility,omitempty" jsonschema:"EXPERIMENTAL. Dispatch a real accessibility click (AccessibilityNodeInfo.performAction(ACTION_CLICK)) through the adb-mcp accessibility bridge instead of a coordinate tap — reaches native views (Compose/RN NativeTabs bars, some overlays) that ignore input tap entirely. Requires the bridge installed once per device: run \"adb-mcp bridge install\" on the host first, or this returns a clear error telling you to. Default false (coordinate tap)."`
+	ViaAccessibility *bool  `json:"via_accessibility,omitempty" jsonschema:"Reserved for future secure accessibility-bridge support. Currently disabled at runtime; leaving false uses coordinate taps."`
 }
 
 type tapElementArgs struct {
@@ -36,7 +36,7 @@ type tapElementArgs struct {
 	ResourceID       string `json:"resource_id" jsonschema:"Resource id to find and tap, e.g. \"com.example.app:id/submit_button\" or just \"submit_button\" (matches by substring by default)."`
 	Partial          *bool  `json:"partial,omitempty" jsonschema:"Substring match instead of exact. Default true."`
 	VerifyChange     *bool  `json:"verify_change,omitempty" jsonschema:"Also report whether the UI hierarchy changed after the tap (ui_changed: true/false). Costs two extra hierarchy reads (~2-3s); use when a tap silently doing nothing would send you down the wrong path."`
-	ViaAccessibility *bool  `json:"via_accessibility,omitempty" jsonschema:"EXPERIMENTAL. Dispatch a real accessibility click (AccessibilityNodeInfo.performAction(ACTION_CLICK)) through the adb-mcp accessibility bridge instead of a coordinate tap — reaches native views (Compose/RN NativeTabs bars, some overlays) that ignore input tap entirely. Requires the bridge installed once per device: run \"adb-mcp bridge install\" on the host first, or this returns a clear error telling you to. Default false (coordinate tap)."`
+	ViaAccessibility *bool  `json:"via_accessibility,omitempty" jsonschema:"Reserved for future secure accessibility-bridge support. Currently disabled at runtime; leaving false uses coordinate taps."`
 }
 
 type swipeArgs struct {
@@ -143,7 +143,7 @@ func hitTest(ctx context.Context, c *adb.Client, x, y int) string {
 	}
 	clickNote := ""
 	if !e.Clickable {
-		clickNote = " — note this element is NOT clickable, which can be why the tap had no effect; aim for a clickable ancestor/sibling (try tap_on_text or tap_element), or the view may need a real accessibility click a coordinate tap can't deliver — try tap_on_text/tap_element with via_accessibility=true (EXPERIMENTAL, requires `adb-mcp bridge install` once per device)"
+		clickNote = " — note this element is NOT clickable, which can be why the tap had no effect; aim for a clickable ancestor/sibling (try tap_on_text or tap_element)"
 	}
 	return fmt.Sprintf(" Coordinate falls in %q (%s, clickable=%t)%s.", label, e.Class, e.Clickable, clickNote)
 }
@@ -248,33 +248,12 @@ func tapElement(ctx context.Context, in tapElementArgs) (*mcp.CallToolResult, er
 // coordinate c.Tap. EXPERIMENTAL — see the field's jsonschema description.
 // Exactly one of resourceID/text is passed by the caller.
 func accessibilityTap(ctx context.Context, c *adb.Client, resourceID, textQuery string, partial bool) (*mcp.CallToolResult, error) {
-	status, err := c.GetBridgeStatus(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("checking accessibility bridge status: %w", err)
-	}
-	if !status.Installed || !status.Enabled {
-		return nil, fmt.Errorf("accessibility bridge not ready (installed=%t, enabled=%t) — run `adb-mcp bridge install` once for this device, then retry with via_accessibility=true", status.Installed, status.Enabled)
-	}
-	result, err := c.AccessibilityClick(ctx, resourceID, textQuery, partial)
-	if err != nil {
-		return nil, err
-	}
-	query := resourceID
-	if query == "" {
-		query = textQuery
-	}
-	if !result.OK {
-		reason := result.Reason
-		if reason == "" {
-			reason = "the click action did not report success"
-		}
-		return nil, fmt.Errorf("accessibility click on %q failed: %s", query, reason)
-	}
-	label := result.MatchedText
-	if label == "" {
-		label = result.MatchedResourceID
-	}
-	return text("Accessibility-clicked %q (matched %q, clickable=%t) via the bridge — a real AccessibilityNodeInfo.performAction(ACTION_CLICK), not a coordinate tap.", query, label, result.Clickable), nil
+	_ = ctx
+	_ = c
+	_ = resourceID
+	_ = textQuery
+	_ = partial
+	return nil, fmt.Errorf("via_accessibility is disabled until the bridge has authenticated IPC, fork-specific identity, private signing, request/response correlation, and cleanup guarantees")
 }
 
 func swipe(ctx context.Context, in swipeArgs) (*mcp.CallToolResult, error) {
@@ -383,6 +362,14 @@ func runSequence(ctx context.Context, in runSequenceArgs) (*mcp.CallToolResult, 
 	}
 	if len(in.Steps) == 0 {
 		return nil, fmt.Errorf("steps is required (a non-empty ordered list)")
+	}
+	for _, s := range in.Steps {
+		switch s.Action {
+		case "launch", "stop", "assert_foreground":
+			if err := enforcePackageAllowed(s.Package); err != nil {
+				return nil, err
+			}
+		}
 	}
 	res, err := c.RunSequence(ctx, in.Steps, boolOr(in.CaptureFinal, true))
 	if err != nil {

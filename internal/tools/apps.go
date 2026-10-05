@@ -89,6 +89,9 @@ func listPackages(ctx context.Context, in listPackagesArgs) (*mcp.CallToolResult
 }
 
 func installApp(ctx context.Context, in installArgs) (*mcp.CallToolResult, error) {
+	if err := enforceHostPathAllowed(in.APKPath); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -101,6 +104,9 @@ func installApp(ctx context.Context, in installArgs) (*mcp.CallToolResult, error
 }
 
 func launchApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -116,6 +122,9 @@ func launchApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) 
 }
 
 func stopApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -127,6 +136,9 @@ func stopApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
 }
 
 func reloadApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -149,6 +161,9 @@ func openDevMenu(ctx context.Context, in serialArg) (*mcp.CallToolResult, error)
 }
 
 func uninstallApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -161,6 +176,9 @@ func uninstallApp(ctx context.Context, in packageArg) (*mcp.CallToolResult, erro
 }
 
 func clearAppData(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -173,6 +191,9 @@ func clearAppData(ctx context.Context, in packageArg) (*mcp.CallToolResult, erro
 }
 
 func grantPermission(ctx context.Context, in permissionArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -184,6 +205,9 @@ func grantPermission(ctx context.Context, in permissionArgs) (*mcp.CallToolResul
 }
 
 func revokePermission(ctx context.Context, in permissionArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -195,6 +219,9 @@ func revokePermission(ctx context.Context, in permissionArgs) (*mcp.CallToolResu
 }
 
 func openURL(ctx context.Context, in openURLArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -207,6 +234,9 @@ func openURL(ctx context.Context, in openURLArgs) (*mcp.CallToolResult, error) {
 }
 
 func launchDevClient(ctx context.Context, in launchDevClientArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -254,6 +284,9 @@ func devClientLaunchError(ctx context.Context, c *adb.Client, pkg string, err er
 }
 
 func lastCrash(ctx context.Context, in lastCrashArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -272,6 +305,9 @@ func lastCrash(ctx context.Context, in lastCrashArgs) (*mcp.CallToolResult, erro
 }
 
 func getAppDetails(ctx context.Context, in packageArg) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -284,6 +320,14 @@ func getAppDetails(ctx context.Context, in packageArg) (*mcp.CallToolResult, err
 }
 
 func appState(ctx context.Context, in appStateArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(in.SourcePath) != "" {
+		if err := enforceHostPathAllowed(in.SourcePath); err != nil {
+			return nil, err
+		}
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -296,6 +340,9 @@ func appState(ctx context.Context, in appStateArgs) (*mcp.CallToolResult, error)
 }
 
 func pushFile(ctx context.Context, in pushArgs) (*mcp.CallToolResult, error) {
+	if err := enforceHostPathAllowed(in.LocalPath); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -308,6 +355,9 @@ func pushFile(ctx context.Context, in pushArgs) (*mcp.CallToolResult, error) {
 }
 
 func pullFile(ctx context.Context, in pullArgs) (*mcp.CallToolResult, error) {
+	if err := enforceHostPathAllowed(in.LocalPath); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err

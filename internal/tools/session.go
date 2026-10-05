@@ -31,10 +31,16 @@ func getSessionDefaults() (projectDir, serial string) {
 // explicit is empty, or an error naming both ways to supply one.
 func resolveProjectDir(explicit string) (string, error) {
 	if explicit != "" {
+		if err := enforceHostPathAllowed(explicit); err != nil {
+			return "", err
+		}
 		return explicit, nil
 	}
 	dir, _ := getSessionDefaults()
 	if dir != "" {
+		if err := enforceHostPathAllowed(dir); err != nil {
+			return "", err
+		}
 		return dir, nil
 	}
 	return "", fmt.Errorf("project_dir is required (pass it directly, or call session_set_defaults once to pin it for the rest of this session)")
@@ -54,6 +60,11 @@ type sessionClearDefaultsArgs struct{}
 // ---- Handlers ----
 
 func sessionSetDefaults(_ context.Context, in sessionSetDefaultsArgs) (*mcp.CallToolResult, error) {
+	if in.ProjectDir != "" {
+		if err := enforceHostPathAllowed(in.ProjectDir); err != nil {
+			return nil, err
+		}
+	}
 	sessionDefaults.mu.Lock()
 	if in.ProjectDir != "" {
 		sessionDefaults.projectDir = in.ProjectDir

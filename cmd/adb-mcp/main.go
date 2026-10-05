@@ -17,7 +17,6 @@ import (
 	"syscall"
 
 	"github.com/iksnerd/adb-mcp/internal/adb"
-	"github.com/iksnerd/adb-mcp/internal/bridgeupdate"
 	"github.com/iksnerd/adb-mcp/internal/guides"
 	"github.com/iksnerd/adb-mcp/internal/selfupdate"
 	"github.com/iksnerd/adb-mcp/internal/tools"
@@ -48,21 +47,7 @@ func main() {
 			fmt.Printf("adb-mcp %s\n", version)
 			return
 		case "bridge":
-			// EXPERIMENTAL: one-time per-device setup for the accessibility-click
-			// bridge (tap_on_text/tap_element's via_accessibility=true). See
-			// bridge/README.md.
-			if len(os.Args) < 3 || os.Args[2] != "install" {
-				log.Fatalf("usage: adb-mcp bridge install [--serial=<serial>]")
-			}
-			fs := flag.NewFlagSet("bridge install", flag.ExitOnError)
-			serial := fs.String("serial", "", "target device serial (adb -s); optional when exactly one device is attached")
-			_ = fs.Parse(os.Args[3:])
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-			defer stop()
-			if err := bridgeupdate.Run(ctx, *serial, os.Stdout); err != nil {
-				log.Fatalf("bridge install failed: %v", err)
-			}
-			return
+			log.Fatal("bridge install is disabled until authenticated IPC, fork-specific identity, private signing, request/response correlation, and teardown cleanup are implemented")
 		}
 	}
 

@@ -63,3 +63,14 @@ func TestRunSequenceSleepValidation(t *testing.T) {
 		t.Errorf("sleep with no seconds should error, got %q", res.Steps[0].Status)
 	}
 }
+
+func TestRunSequenceRejectsInjectedPackage(t *testing.T) {
+	c, _ := newFake("")
+	res, _ := c.RunSequence(context.Background(), []Step{{Action: "launch", Package: "com.example.app;id"}}, false)
+	if len(res.Steps) != 1 || res.Steps[0].Status != "error" {
+		t.Fatalf("expected one errored step, got %+v", res.Steps)
+	}
+	if !res.Aborted {
+		t.Fatal("expected non-optional package validation failure to abort sequence")
+	}
+}

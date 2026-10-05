@@ -45,6 +45,9 @@ func resolve(ctx context.Context, serial string) (*adb.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := enforceSerialAllowed(s); err != nil {
+		return nil, err
+	}
 	return adb.New(s), nil
 }
 

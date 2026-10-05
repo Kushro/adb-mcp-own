@@ -101,7 +101,7 @@ func (c *Client) InputText(ctx context.Context, text string) error {
 // neutralises all of them at once; an embedded single quote is emitted as the
 // standard '\” sequence (close-quote, escaped quote, reopen-quote).
 func escapeInputText(s string) string {
-	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+	return shellQuote(s)
 }
 
 // PressKey sends a keyevent by resolved code.

@@ -101,6 +101,9 @@ func gradleBuild(ctx context.Context, in gradleArgs) (*mcp.CallToolResult, error
 }
 
 func buildAndRun(ctx context.Context, in buildAndRunArgs) (*mcp.CallToolResult, error) {
+	if err := enforcePackageAllowed(in.Package); err != nil {
+		return nil, err
+	}
 	c, err := resolve(ctx, in.Serial)
 	if err != nil {
 		return nil, err
@@ -319,6 +322,9 @@ func gradleProjectProperties(ctx context.Context, in gradlePropertiesArgs) (*mcp
 }
 
 func scaffoldProject(ctx context.Context, in scaffoldArgs) (*mcp.CallToolResult, error) {
+	if err := enforceHostPathAllowed(in.Destination); err != nil {
+		return nil, err
+	}
 	files, err := scaffold.Create(scaffold.Options{Destination: in.Destination, Name: in.Name, Package: in.Package})
 	if err != nil {
 		return nil, err

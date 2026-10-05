@@ -143,7 +143,7 @@ func (c *Client) demoBroadcast(ctx context.Context, command string, kv ...string
 		// Quote the value: `adb shell` concatenates args and the device shell
 		// re-parses them, so a value with a space or metachar (e.g. a carrier
 		// name "AT&T Mobile") would otherwise be word-split before `am` sees it.
-		args = append(args, "-e", kv[i], escapeInputText(kv[i+1]))
+		args = append(args, "-e", kv[i], shellQuote(kv[i+1]))
 	}
 	_, err := c.adb(ctx, args...)
 	return err
