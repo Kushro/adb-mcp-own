@@ -1,14 +1,14 @@
 #!/bin/sh
 # Installs the latest adb-mcp release binary for this machine.
 #
-#   curl -fsSL https://raw.githubusercontent.com/iksnerd/adb-mcp/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Kushro/adb-mcp-own/main/install.sh | sh
 #
 # Options (env vars):
 #   BIN_DIR   install destination (default: ~/.local/bin)
 #   VERSION   release tag to install, e.g. v0.10.1 (default: latest)
 set -eu
 
-REPO="iksnerd/adb-mcp"
+REPO="Kushro/adb-mcp-own"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
